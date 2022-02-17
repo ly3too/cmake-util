@@ -1,6 +1,9 @@
 # cmake-util
 cmake project util. used to conventiently add cmake binary and library
 
+## demo
+cmake project template: https://github.com/ly3too/cmake_proj_template/tree/master
+
 ## usage
 first add submodule
 ```bash
