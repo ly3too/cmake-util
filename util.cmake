@@ -14,8 +14,32 @@ function(auto_add_subdirs)
 endfunction()
 
 # add each subdir as an exe project with dependencies
-function(auto_add_test_projects)
-    cmake_parse_arguments(auto_add_exe_projects "" "" "DEPENDS" ${ARGN})
+function(auto_add_subexes)
+    cmake_parse_arguments(auto_add_subexes "" "" "DEPENDS" ${ARGN})
+
+    file(GLOB DIRS *)
+    foreach(DIR ${DIRS})
+        if (IS_DIRECTORY ${DIR})
+            file(GLOB SRCS ${DIR}/*.c ${DIR}/*.cpp ${DIR}/*.h ${DIR}/*.hpp)
+
+            if (SRCS)
+                get_filename_component(EXE_NAME ${DIR} NAME)
+                message("add project: ${EXE_NAME}")
+                add_executable(${EXE_NAME} ${SRCS})
+
+                if (auto_add_subexes_DEPENDS)
+                    target_link_libraries(${EXE_NAME} PRIVATE ${auto_add_subexes_DEPENDS})
+                endif()
+            endif(SRCS)
+
+        endif()
+    endforeach()
+endfunction()
+
+
+# add each subdir as an test project with dependencies
+function(auto_add_subtests)
+    cmake_parse_arguments(auto_add_subtests "" "" "DEPENDS" ${ARGN})
 
     file(GLOB DIRS *)
     foreach(DIR ${DIRS})
@@ -28,8 +52,8 @@ function(auto_add_test_projects)
                 add_executable(test_${EXE_NAME} ${SRCS})
                 add_test(test_${EXE_NAME} test_${EXE_NAME})
 
-                if (auto_add_exe_projects_DEPENDS)
-                    target_link_libraries(test_${EXE_NAME} PRIVATE ${auto_add_exe_projects_DEPENDS})
+                if (auto_add_subtests_DEPENDS)
+                    target_link_libraries(test_${EXE_NAME} PRIVATE ${auto_add_subtests_DEPENDS})
                 endif()
             endif(SRCS)
 
@@ -42,7 +66,7 @@ endfunction()
 #   - include/
 #   - src/
 #       - *.cpp/*.c
-# usage: auto_add_library(target TYPE static DEPENDS libxxx)
+# usage: auto_add_library(target TYPE static [NO_EXPORT] [DESTINATION <install dst>] DEPENDS libxxx)
 function(auto_add_library TARGET_NAME)
     # parse args
     cmake_parse_arguments(AUTO_ADD_LIBRARY "NO_INSTALL;NO_INSTALL_HEADER;NO_PREFIX;NO_EXPORT;GEN_EXPORT" "TYPE;DESTINATION;GEN_INC_DIR" "DEPENDS" ${ARGN} )
@@ -124,9 +148,14 @@ endfunction()
 
 # automatically add an executable
 # default install to bindir
-# usage: auto_add_executable(target SRCS main.cpp DEPENDS libxxx)
+# usage: auto_add_executable(target [GLOB] [NO_INSTALL] [DESTINATION] <dst> [SRCS] main.cpp DEPENDS libxxx)
 function(auto_add_executable TARGET_NAME )
-    cmake_parse_arguments(AUTO_ADD_EXECUTABLE "NO_INSTALL" "DESTINATION" "SRCS;DEPENDS" ${ARGN} )
+    cmake_parse_arguments(AUTO_ADD_EXECUTABLE "NO_INSTALL;GLOB" "DESTINATION" "SRCS;DEPENDS" ${ARGN} )
+    if(AUTO_ADD_EXECUTABLE_GLOB)
+        file(GLOB_RECURSE SRCS *.c *.cpp *.h *.hpp)
+        list(APPEND AUTO_ADD_EXECUTABLE_SRCS ${SRCS})
+    endif()
+
     if(NOT AUTO_ADD_EXECUTABLE_SRCS)
         message(FATAL_ERROR "source files (SRCS) required")
     endif()
