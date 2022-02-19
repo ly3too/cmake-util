@@ -2,6 +2,11 @@ include(GNUInstallDirs)
 include(CMakeParseArguments)
 include(GenerateExportHeader)
 
+# detect mingw
+if(MINGW)
+    set(CMAKE_SYSTEM_NAME "Mingw")
+endif()
+
 # auto add subdirs to project
 function(auto_add_subdirs)
     file(GLOB DIRS *)
